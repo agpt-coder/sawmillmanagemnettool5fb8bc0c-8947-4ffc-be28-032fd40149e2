@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "sawmillmanagemnettool"
+version = "0.1.0"
+description = "I run a simple backyard sawmill. I need software to manage and optimimze it"
+authors = ["AutoGPT <info@agpt.co>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+fastapi = "*"
+httpx = "^0.23.0"
+prisma = "*"
+pydantic = "*"
+uvicorn = "*"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

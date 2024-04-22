@@ -1,0 +1,168 @@
+// datasource db defines the database connection settings.
+// It is configured for PostgreSQL and uses an environment variable for the connection URL.
+// The 'extensions' feature enables the use of PostgreSQL-specific data types.
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+}
+
+// generator db configures Prisma Client settings.
+// It is set up to use Prisma Client Python with asyncio interface and specific features.
+generator db {
+  provider                    = "prisma-client-py"
+  interface                   = "asyncio"
+  recursive_type_depth        = 5
+  previewFeatures             = ["postgresqlExtensions"]
+  enable_experimental_decimal = true
+}
+
+model User {
+  id             String   @id @default(dbgenerated("gen_random_uuid()"))
+  email          String   @unique
+  hashedPassword String
+  role           UserRole @default(PUBLIC_USER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  EmployeeDetails Employee?
+  SalesOrders     SalesOrder[]
+}
+
+model Employee {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId    String   @unique
+  firstName String
+  lastName  String
+  position  Position
+  User      User     @relation(fields: [userId], references: [id])
+
+  Shifts          Shift[]
+  MaintenanceLogs MaintenanceLog[]
+}
+
+model Shift {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  startTime  DateTime
+  endTime    DateTime
+  Employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+}
+
+model InventoryItem {
+  id       String   @id @default(dbgenerated("gen_random_uuid()"))
+  name     String
+  quantity Int
+  itemType ItemType
+
+  Logs InventoryLog[]
+}
+
+model InventoryLog {
+  id              String        @id @default(dbgenerated("gen_random_uuid()"))
+  timestamp       DateTime      @default(now())
+  changeAmount    Int
+  InventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  inventoryItemId String
+}
+
+model MaintenanceLog {
+  id             String    @id @default(dbgenerated("gen_random_uuid()"))
+  description    String
+  completionDate DateTime? // nullable in case the maintenance is scheduled but not yet completed
+  Equipment      Equipment @relation(fields: [equipmentId], references: [id])
+  equipmentId    String
+  responsible    Employee  @relation(fields: [employeeId], references: [id])
+  employeeId     String
+}
+
+model Equipment {
+  id                  String @id @default(dbgenerated("gen_random_uuid()"))
+  name                String
+  maintenanceSchedule String
+
+  MaintenanceLogs MaintenanceLog[]
+}
+
+model SalesOrder {
+  id         String      @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt  DateTime    @default(now())
+  totalPrice Decimal     @db.Decimal(18, 2)
+  status     OrderStatus
+  Customer   Customer    @relation(fields: [customerId], references: [id])
+  customerId String
+  User       User        @relation(fields: [userId], references: [id])
+  userId     String
+}
+
+model Customer {
+  id          String @id @default(dbgenerated("gen_random_uuid()"))
+  name        String
+  contactInfo String
+
+  SalesOrders SalesOrder[]
+}
+
+model BoardFootCalculator {
+  id                String   @id @default(dbgenerated("gen_random_uuid()"))
+  diameter          Float
+  treeType          TreeType
+  height            Float
+  pricePerBoardFoot Decimal  @db.Decimal(18, 2)
+  isPublic          Boolean
+}
+
+model QuestionAndAnswer {
+  id        String  @id @default(dbgenerated("gen_random_uuid()"))
+  question  String
+  answer    String
+  isPrivate Boolean
+}
+
+model RoleModule {
+  id         String     @id @default(dbgenerated("gen_random_uuid()"))
+  role       UserRole
+  moduleName ModuleName
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  SALESPERSON
+  MAINTENANCE_STAFF
+  PUBLIC_USER
+}
+
+enum Position {
+  OPERATOR
+  SALESPERSON
+  MAINTENANCE_STAFF
+}
+
+enum ItemType {
+  MATERIAL
+  PRODUCT
+  RESOURCE
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum TreeType {
+  OAK
+  PINE
+  CEDAR
+  MAPLE
+}
+
+enum ModuleName {
+  INVENTORY_MANAGEMENT
+  SCHEDULING
+  MAINTENANCE_TRACKER
+  SALES_MODULE
+  PUBLIC_BOARD_FOOT_CALCULATOR
+  PRIVATE_BOARD_FOOT_CALCULATOR
+}
+
